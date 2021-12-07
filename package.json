@@ -2,16 +2,17 @@
   "name": "tinyapp",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "express_server.js",
   "scripts": {
+    "start": "./node_modules/.bin/nodemon -L express_server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  },  
   "repository": {
     "type": "git",
     "url": "git+https://github.com/FatimaSidq/tinyapp.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Fatima Siddique",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/FatimaSidq/tinyapp/issues"
