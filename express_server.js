@@ -37,10 +37,8 @@ app.post("/urls", (req, res) => {
   while (Object.keys(urlDatabase).includes(shortURL)){
     shortURL = generateRandomString();
   }
-  const longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
-  const templateVars = { shortURL: shortURL, longURL: longURL };
-  res.render("urls_show", templateVars)
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`)
 });
 
 app.get("/urls/new", (req, res) => {
@@ -48,8 +46,14 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  const longURL = urlDatabase[req.params.shortURL];
+  const templateVars = { shortURL: req.params.shortURL, longURL: longURL };
   res.render("urls_show", templateVars);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls")
 });
 
 app.get("/u/:shortURL", (req, res) => {
