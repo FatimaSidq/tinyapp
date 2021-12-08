@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
+const { restart } = require("nodemon");
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -43,6 +44,11 @@ app.post("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
+});
+
+app.post("/urls/:shortURL", (req, res) => {
+  urlDatabase[shortURL] = req.body.newUrl;
+  res.redirect(`/urls/${req.params.shortURL}`);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
