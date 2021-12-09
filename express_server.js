@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
 
 require("nodemon");
 
@@ -33,6 +33,16 @@ const emailExists = function(email) {
   }
 };
 
+const urlsForUser = function(id) {
+  const urls = {};
+  for (let shortURL of Object.keys(urlDatabase)) {
+    if (urlDatabase[shortURL].userID === id) {
+      urls[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return urls;
+}
+
 function generateRandomString() {
   let result = "";
   for (let i = 0; i < 6; i += 1) {
@@ -41,16 +51,17 @@ function generateRandomString() {
   return result;
 }
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
 app.get("/", (req, res) => {
   res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { user: req.cookies["user"], urls: urlDatabase };
+  const user = req.cookies["user"];
+  if (!user) {
+    res.statusCode = 405;
+    return res.send("Please log in to view URLs.<br><a href=\"/login\">Login</a>");
+  }
+  const templateVars = { user: user, urls: urlsForUser(user.id) };
   res.render("urls_index", templateVars);
 });
 
@@ -69,11 +80,12 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: req.cookies["user"] }
+  const user = req.cookies["user"];
   if (!user) {
     res.statusCode = 405;
     return res.send("Please log in to shorten a URL.");
   }
+  const templateVars = { user: user}
   res.render("urls_new", templateVars);
 });
 
@@ -132,25 +144,39 @@ app.post("/logout", (req, res) => {
 })
 
 app.post("/urls/:shortURL", (req, res) => {
+  const user = req.cookies["user"];
   const shortURL = req.params.shortURL;
+  if (!user || user.id !== urlDatabase[shortURL].userID) {
+    res.statusCode = 405;
+    return res.send("You do not have permission to complete that action!");
+  }
   urlDatabase[shortURL].longURL = req.body.newUrl;
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  const templateVars = { user: req.cookies["user"], shortURL: req.params.shortURL, longURL: longURL };
+  const url = urlDatabase[req.params.shortURL];
+  if (!url) {
+    res.statusCode = 404;
+    return res.send("Shortened URL not found!")
+  }
+  const templateVars = { user: req.cookies["user"], shortURL: req.params.shortURL, url: url };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const user = req.cookies["user"];
+  if (!user || user.id !== urlDatabase[req.params.shortURL].userID) {
+    res.statusCode = 405;
+    return res.send("You do not have permission to complete that action!");
+  }
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls")
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  longURL ? res.redirect(longURL) : res.send("Invalid URL!");
+  const url = urlDatabase[req.params.shortURL];
+  url ? res.redirect(url.longURL) : res.send("Invalid URL!");
 })
 
 app.listen(PORT, () => {
