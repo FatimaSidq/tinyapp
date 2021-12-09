@@ -23,6 +23,14 @@ const users = {
   }
 }
 
+const emailExists = function(email) {
+  for (let user of Object.values(users)) {
+    if (user.email === email) {
+      return user;
+    }
+  }
+};
+
 function generateRandomString() {
   let result = "";
   for (let i = 0; i < 6; i += 1) {
@@ -36,7 +44,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
@@ -60,14 +68,20 @@ app.get("/urls/new", (req, res) => {
 
 app.post("/register", (req, res) => {
   const random_id = generateRandomString();
-  users[random_id] = {
-    id: random_id,
-    email: res.body.email,
-    password: res.body.password
-  };
+  const email = req.body.email;
+  const password = req.body.password;
+
   if (!email && password) {
     res.statusCode = 400;
     return res.send("Fields required!")
+  } else if (emailExists(email)) {
+    return res.send("Email already registered!")
+  };
+
+  users[random_id] = {
+    id: random_id,
+    email: email,
+    password: password
   };
 
   res.cookie("user", users[random_id])
@@ -75,12 +89,29 @@ app.post("/register", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = { user: req.cookies["user"] }
-  res.render("register", templateVars)
+  if (req.cookies["user"]) {
+    return res.redirect("/urls");
+  }
+  res.render("register", {user: null});
 });
 
+app.get("/login", (req, res) => {
+  if (req.cookies["user"]) {
+    return res.redirect("/urls");
+  }
+  res.render("login", {user: null});
+})
+
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username)
+  const user = emailExists(req.body.email);
+  if (!user) {
+    res.statusCode = 403;
+    return res.send("User not found!");
+  } else if (user.password !== req.body.password) {
+    res.statusCode = 403;
+    return res.send("Incorrect password!");
+  };
+  res.cookie("user", user)
   res.redirect("/urls");
 })
 
