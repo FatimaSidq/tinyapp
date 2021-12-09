@@ -66,6 +66,7 @@ app.post("/register", (req, res) => {
     password: res.body.password
   };
   if (!email && password) {
+    res.statusCode = 400;
     return res.send("Fields required!")
   };
 
