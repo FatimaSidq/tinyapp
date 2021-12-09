@@ -7,13 +7,21 @@ const cookieParser = require('cookie-parser')
 require("nodemon");
 
 app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+const users = {
+  "fTX52r": {
+    id: "fTX52r",
+    email: "user@example.com",
+    password: "password"
+  }
+}
 
 function generateRandomString() {
   let result = "";
@@ -38,7 +46,7 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
-  while (Object.keys(urlDatabase).includes(shortURL)){
+  while (Object.keys(urlDatabase).includes(shortURL)) {
     shortURL = generateRandomString();
   }
   urlDatabase[shortURL] = req.body.longURL;
@@ -48,6 +56,16 @@ app.post("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const templateVars = { username: req.cookies["username"] }
   res.render("urls_new", templateVars);
+});
+
+app.post("/register", (req, res) => {
+  const random_id = generateRandomString();
+  users[random_id] = {
+    id: random_id,
+    email: res.body.email,
+    password: res.body.password
+  };
+  res.redirect("/urls");
 });
 
 app.get("/register", (req, res) => {
