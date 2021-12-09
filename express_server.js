@@ -11,8 +11,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "fTX52r"
+  }
 };
 
 const users = {
@@ -53,16 +55,25 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  const user = req.cookies["user"];
+  if (!user) {
+    res.statusCode = 405;
+    return res.send("Please log in to shorten a URL.");
+  }
   let shortURL = generateRandomString();
   while (Object.keys(urlDatabase).includes(shortURL)) {
     shortURL = generateRandomString();
   }
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: user.id};
   res.redirect(`/urls/${shortURL}`)
 });
 
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: req.cookies["user"] }
+  if (!user) {
+    res.statusCode = 405;
+    return res.send("Please log in to shorten a URL.");
+  }
   res.render("urls_new", templateVars);
 });
 
@@ -122,12 +133,12 @@ app.post("/logout", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body.newUrl;
+  urlDatabase[shortURL].longURL = req.body.newUrl;
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   const templateVars = { user: req.cookies["user"], shortURL: req.params.shortURL, longURL: longURL };
   res.render("urls_show", templateVars);
 });
@@ -138,7 +149,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   longURL ? res.redirect(longURL) : res.send("Invalid URL!");
 })
 
