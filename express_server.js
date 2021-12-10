@@ -46,7 +46,7 @@ app.get("/users.json", (req, res) => {
 app.get("/", (req, res) => {
   const user_id = req.session.user_id;
   if (!user_id) {
-    res.redirect("/login");
+    return res.redirect("/login");
   }
   res.redirect("/urls");
 });
