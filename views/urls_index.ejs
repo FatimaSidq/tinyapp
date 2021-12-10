@@ -18,7 +18,6 @@
         <tr>
           <th scope="col">Short URL</th>
           <th scope="col">Long URL</th>
-          <th scope="col">Creator</th>
           <th scope="col">Edit</th>
           <th scope="col">Delete</th>
         </tr>
@@ -28,7 +27,6 @@
           <tr>
             <td><%= url %></td>
             <td><%= urls[url].longURL %></td>
-            <td><%= urls[url].userID %></td>
             <td><a href="/urls/<%= url %>"><button type="button" class="btn btn-outline-primary">Edit</button></a></td>
             <td><form method="POST" action="/urls/<%= url %>/delete"><button type="submit" class="btn btn-outline-danger">Delete</button></form></td>
           </tr>
