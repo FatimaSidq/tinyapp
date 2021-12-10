@@ -4,7 +4,7 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
-const findUserByEmail = require("./helpers");
+const getUserByEmail = require("./helpers");
 
 require("nodemon");
 
@@ -84,7 +84,7 @@ app.post("/register", (req, res) => {
   if (!email && password) {
     res.statusCode = 400;
     return res.send("Fields required!")
-  } else if (findUserByEmail(email)) {
+  } else if (getUserByEmail(email)) {
     return res.send("Email already registered!")
   };
 
@@ -113,7 +113,7 @@ app.get("/login", (req, res) => {
 })
 
 app.post("/login", (req, res) => {
-  const user = findUserByEmail(req.body.email);
+  const user = getUserByEmail(req.body.email);
   if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
     res.statusCode = 403;
     return res.send("Email or password invalid!");
