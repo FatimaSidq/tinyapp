@@ -9,7 +9,12 @@ require("nodemon");
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieSession());
+app.use(cookieSession({
+  name: 'session',
+  keys: ["U*KLZufHFp54@$6xTYBwjn&B8g9-TD2Dh7wFpUztPBc34Fy4zLZMv8u$9yR^7aep"],
+
+  maxAge: 24 * 60 * 60 * 1000
+}))
 
 const urlDatabase = {};
 
@@ -125,7 +130,7 @@ app.post("/login", (req, res) => {
 })
 
 app.post("/logout", (req, res) => {
-  req.session.destroy();
+  req.session = null;
   res.redirect("/urls");
 })
 
