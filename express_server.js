@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 
 require("nodemon");
 
@@ -10,20 +11,9 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "fTX52r"
-  }
-};
+const urlDatabase = {};
 
-const users = {
-  "fTX52r": {
-    id: "fTX52r",
-    email: "user@example.com",
-    password: "password"
-  }
-}
+const users = {};
 
 const emailExists = function(email) {
   for (let user of Object.values(users)) {
@@ -104,7 +94,7 @@ app.post("/register", (req, res) => {
   users[random_id] = {
     id: random_id,
     email: email,
-    password: password
+    password: bcrypt.hashSync(password, 10)
   };
 
   res.cookie("user", users[random_id])
@@ -127,14 +117,11 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const user = emailExists(req.body.email);
-  if (!user) {
+  if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
     res.statusCode = 403;
-    return res.send("User not found!");
-  } else if (user.password !== req.body.password) {
-    res.statusCode = 403;
-    return res.send("Incorrect password!");
+    return res.send("Email or password invalid!");
   };
-  res.cookie("user", user)
+  res.cookie("user", user);
   res.redirect("/urls");
 })
 
