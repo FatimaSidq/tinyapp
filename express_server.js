@@ -15,13 +15,13 @@ app.use(cookieSession({
   keys: ["U*KLZufHFp54@$6xTYBwjn&B8g9-TD2Dh7wFpUztPBc34Fy4zLZMv8u$9yR^7aep"],
 
   maxAge: 24 * 60 * 60 * 1000
-}))
+}));
 
 const urlDatabase = {};
 
 const users = {};
 
-const urlsForUser = function (id) {
+const urlsForUser = function(id) {
   const urls = {};
   for (let shortURL of Object.keys(urlDatabase)) {
     if (urlDatabase[shortURL].userID === id) {
@@ -29,7 +29,7 @@ const urlsForUser = function (id) {
     }
   }
   return urls;
-}
+};
 
 function generateRandomString() {
   let result = "";
@@ -40,13 +40,13 @@ function generateRandomString() {
 }
 
 app.get("/users.json", (req, res) => {
-  res.send(users)
-})
+  res.send(users);
+});
 
 app.get("/", (req, res) => {
   const user_id = req.session.user_id;
   if (!user_id) {
-    res.redirect("/login")
+    res.redirect("/login");
   }
   res.redirect("/urls");
 });
@@ -54,7 +54,7 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   const user_id = req.session.user_id;
   if (!user_id) {
-    return res.redirect("/login")
+    return res.redirect("/login");
   }
   const templateVars = { user_id: user_id, email: req.session.email, urls: urlsForUser(user_id) };
   res.render("urls_index", templateVars);
@@ -71,7 +71,7 @@ app.post("/urls", (req, res) => {
     shortURL = generateRandomString();
   }
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: user_id };
-  res.redirect(`/urls/${shortURL}`)
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/new", (req, res) => {
@@ -80,7 +80,7 @@ app.get("/urls/new", (req, res) => {
     res.statusCode = 405;
     return res.redirect("/error/Please log in to shorten a URL");
   }
-  const templateVars = { email: req.session.email, user_id: user_id }
+  const templateVars = { email: req.session.email, user_id: user_id };
   res.render("urls_new", templateVars);
 });
 
@@ -91,10 +91,10 @@ app.post("/register", (req, res) => {
 
   if (!email || !password) {
     res.statusCode = 400;
-    return res.redirect("/error/Missing a required field!")
+    return res.redirect("/error/Missing a required field!");
   } else if (getUserByEmail(email, users)) {
-    return res.redirect("/error/Email already registered!")
-  };
+    return res.redirect("/error/Email already registered!");
+  }
 
   users[random_id] = {
     id: random_id,
@@ -119,23 +119,23 @@ app.get("/login", (req, res) => {
     return res.redirect("/urls");
   }
   res.render("login", { user_id: null });
-})
+});
 
 app.post("/login", (req, res) => {
   const user = getUserByEmail(req.body.email, users);
   if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
     res.statusCode = 403;
     return res.redirect("/error/Email or password invalid!");
-  };
+  }
   req.session.user_id = user.id;
   req.session.email = req.body.email;
   res.redirect("/urls");
-})
+});
 
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/urls");
-})
+});
 
 app.post("/urls/:shortURL", (req, res) => {
   const user_id = req.session.user_id;
@@ -165,23 +165,23 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     return res.redirect("/error/You do not have permission to complete that action!");
   }
   delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
 app.get("/u/:shortURL", (req, res) => {
   const url = urlDatabase[req.params.shortURL];
   url ? res.redirect(url.longURL) : res.redirect("/error/Invalid URL!");
-})
+});
 
 app.get("/error/:errorMessage", (req, res) => {
   const templateVars = { user_id: req.session.user_id, email: req.session.email, error: req.params.errorMessage};
-  res.render("error", templateVars)
-})
+  res.render("error", templateVars);
+});
 
 app.get("/:_", (req, res) => {
   res.statusCode = 404;
-  res.redirect("/error/404 Not Found")
-})
+  res.redirect("/error/404 Not Found");
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
