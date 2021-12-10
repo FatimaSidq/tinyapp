@@ -4,6 +4,7 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const findUserByEmail = require("./helpers");
 
 require("nodemon");
 
@@ -19,14 +20,6 @@ app.use(cookieSession({
 const urlDatabase = {};
 
 const users = {};
-
-const findUserByEmail = function(email) {
-  for (let user of Object.values(users)) {
-    if (user.email === email) {
-      return user;
-    }
-  }
-};
 
 const urlsForUser = function(id) {
   const urls = {};
