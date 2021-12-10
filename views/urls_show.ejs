@@ -16,7 +16,7 @@
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
       </div>
     <div class="card-footer text-muted">
-      <% if(!user || url.userID !== user.id){ %>
+      <% if(!user_id || url.userID !== user_id){ %>
         <p>You do not own this shortened URL.</p>
         <% } else {%>
           <h2>Edit</h2>

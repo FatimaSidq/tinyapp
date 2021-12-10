@@ -15,7 +15,7 @@ const urlDatabase = {};
 
 const users = {};
 
-const emailExists = function(email) {
+const findUserByEmail = function(email) {
   for (let user of Object.values(users)) {
     if (user.email === email) {
       return user;
@@ -46,18 +46,17 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const user = req.cookies["user"];
-  if (!user) {
-    res.statusCode = 405;
-    return res.send("Please log in to view URLs.<br><a href=\"/login\">Login</a>");
+  const user_id = req.cookies["user_id"];
+  if (!user_id) {
+    return res.redirect("/login")
   }
-  const templateVars = { user: user, urls: urlsForUser(user.id) };
+  const templateVars = { user_id: user_id, urls: urlsForUser(user_id) };
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  const user = req.cookies["user"];
-  if (!user) {
+  const user_id = req.cookies["user_id"];
+  if (!user_id) {
     res.statusCode = 405;
     return res.send("Please log in to shorten a URL.");
   }
@@ -65,17 +64,17 @@ app.post("/urls", (req, res) => {
   while (Object.keys(urlDatabase).includes(shortURL)) {
     shortURL = generateRandomString();
   }
-  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: user.id};
+  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: user_id};
   res.redirect(`/urls/${shortURL}`)
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = req.cookies["user"];
-  if (!user) {
+  const user_id = req.cookies["user_id"];
+  if (!user_id) {
     res.statusCode = 405;
     return res.send("Please log in to shorten a URL.");
   }
-  const templateVars = { user: user}
+  const templateVars = { user_id: user_id }
   res.render("urls_new", templateVars);
 });
 
@@ -87,7 +86,7 @@ app.post("/register", (req, res) => {
   if (!email && password) {
     res.statusCode = 400;
     return res.send("Fields required!")
-  } else if (emailExists(email)) {
+  } else if (findUserByEmail(email)) {
     return res.send("Email already registered!")
   };
 
@@ -97,43 +96,43 @@ app.post("/register", (req, res) => {
     password: bcrypt.hashSync(password, 10)
   };
 
-  res.cookie("user", users[random_id])
+  res.cookie("user_id", random_id)
   res.redirect("/urls");
 });
 
 app.get("/register", (req, res) => {
-  if (req.cookies["user"]) {
+  if (req.cookies["user_id"]) {
     return res.redirect("/urls");
   }
-  res.render("register", {user: null});
+  res.render("register", {user_id: null});
 });
 
 app.get("/login", (req, res) => {
-  if (req.cookies["user"]) {
+  if (req.cookies["user_id"]) {
     return res.redirect("/urls");
   }
-  res.render("login", {user: null});
+  res.render("login", {user_id: null});
 })
 
 app.post("/login", (req, res) => {
-  const user = emailExists(req.body.email);
+  const user = findUserByEmail(req.body.email);
   if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
     res.statusCode = 403;
     return res.send("Email or password invalid!");
   };
-  res.cookie("user", user);
+  res.cookie("user_id", user.id);
   res.redirect("/urls");
 })
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 })
 
 app.post("/urls/:shortURL", (req, res) => {
-  const user = req.cookies["user"];
+  const user_id = req.cookies["user_id"];
   const shortURL = req.params.shortURL;
-  if (!user || user.id !== urlDatabase[shortURL].userID) {
+  if (!user_id || user_id !== urlDatabase[shortURL].userID) {
     res.statusCode = 405;
     return res.send("You do not have permission to complete that action!");
   }
@@ -147,13 +146,13 @@ app.get("/urls/:shortURL", (req, res) => {
     res.statusCode = 404;
     return res.send("Shortened URL not found!")
   }
-  const templateVars = { user: req.cookies["user"], shortURL: req.params.shortURL, url: url };
+  const templateVars = { user_id: req.cookies["user_id"], shortURL: req.params.shortURL, url: url };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const user = req.cookies["user"];
-  if (!user || user.id !== urlDatabase[req.params.shortURL].userID) {
+  const user_id = req.cookies["user_id"];
+  if (!user_id || user_id !== urlDatabase[req.params.shortURL].userID) {
     res.statusCode = 405;
     return res.send("You do not have permission to complete that action!");
   }
