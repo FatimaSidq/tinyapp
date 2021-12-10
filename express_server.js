@@ -4,7 +4,7 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
-const getUserByEmail = require("./helpers");
+const { getUserByEmail } = require("./helpers");
 
 require("nodemon");
 
@@ -21,7 +21,7 @@ const urlDatabase = {};
 
 const users = {};
 
-const urlsForUser = function(id) {
+const urlsForUser = function (id) {
   const urls = {};
   for (let shortURL of Object.keys(urlDatabase)) {
     if (urlDatabase[shortURL].userID === id) {
@@ -39,8 +39,16 @@ function generateRandomString() {
   return result;
 }
 
+app.get("/users.json", (req, res) => {
+  res.send(users)
+})
+
 app.get("/", (req, res) => {
-  res.redirect("/login");
+  const user_id = req.session.user_id;
+  if (!user_id) {
+    res.redirect("/login")
+  }
+  res.redirect("/urls");
 });
 
 app.get("/urls", (req, res) => {
@@ -48,7 +56,7 @@ app.get("/urls", (req, res) => {
   if (!user_id) {
     return res.redirect("/login")
   }
-  const templateVars = { user_id: user_id, urls: urlsForUser(user_id) };
+  const templateVars = { user_id: user_id, email: req.session.email, urls: urlsForUser(user_id) };
   res.render("urls_index", templateVars);
 });
 
@@ -62,7 +70,7 @@ app.post("/urls", (req, res) => {
   while (Object.keys(urlDatabase).includes(shortURL)) {
     shortURL = generateRandomString();
   }
-  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: user_id};
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: user_id };
   res.redirect(`/urls/${shortURL}`)
 });
 
@@ -72,7 +80,7 @@ app.get("/urls/new", (req, res) => {
     res.statusCode = 405;
     return res.send("Please log in to shorten a URL.");
   }
-  const templateVars = { user_id: user_id }
+  const templateVars = { email: req.session.email, user_id: user_id }
   res.render("urls_new", templateVars);
 });
 
@@ -84,7 +92,7 @@ app.post("/register", (req, res) => {
   if (!email && password) {
     res.statusCode = 400;
     return res.send("Fields required!")
-  } else if (getUserByEmail(email)) {
+  } else if (getUserByEmail(email, users)) {
     return res.send("Email already registered!")
   };
 
@@ -95,6 +103,7 @@ app.post("/register", (req, res) => {
   };
 
   req.session.user_id = random_id;
+  req.session.email = email;
   res.redirect("/urls");
 });
 
@@ -102,23 +111,24 @@ app.get("/register", (req, res) => {
   if (req.session.user_id) {
     return res.redirect("/urls");
   }
-  res.render("register", {user_id: null});
+  res.render("register", { user_id: null });
 });
 
 app.get("/login", (req, res) => {
   if (req.session.user_id) {
     return res.redirect("/urls");
   }
-  res.render("login", {user_id: null});
+  res.render("login", { user_id: null });
 })
 
 app.post("/login", (req, res) => {
-  const user = getUserByEmail(req.body.email);
+  const user = getUserByEmail(req.body.email, users);
   if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
     res.statusCode = 403;
     return res.send("Email or password invalid!");
   };
   req.session.user_id = user.id;
+  req.session.email = req.body.email;
   res.redirect("/urls");
 })
 
@@ -144,7 +154,7 @@ app.get("/urls/:shortURL", (req, res) => {
     res.statusCode = 404;
     return res.send("Shortened URL not found!")
   }
-  const templateVars = { user_id: req.session.user_id, shortURL: req.params.shortURL, url: url };
+  const templateVars = { user_id: req.session.user_id, email: req.session.email, shortURL: req.params.shortURL, url: url };
   res.render("urls_show", templateVars);
 });
 
